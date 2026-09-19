@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
             
             try {
-                // Send to server
+                // Send to server (same origin)
                 const response = await fetch('/api/contacts', {
                     method: 'POST',
                     headers: {

@@ -71,11 +71,11 @@ document.addEventListener('DOMContentLoaded', function() {
         observer.observe(el);
     });
 
-    // Form Submission Handler
+    // Form Submission Handler - Send to server
     const contactForm = document.querySelector('.contact-form');
     
     if (contactForm) {
-        contactForm.addEventListener('submit', function(e) {
+        contactForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             // Get form data
@@ -84,51 +84,106 @@ document.addEventListener('DOMContentLoaded', function() {
                 name: formData.get('name'),
                 email: formData.get('email'),
                 company: formData.get('company'),
-                message: formData.get('message'),
-                timestamp: new Date().toISOString()
+                message: formData.get('message')
             };
             
-            // Save to localStorage
-            let contacts = JSON.parse(localStorage.getItem('tvq_contacts') || '[]');
-            contacts.push(data);
-            localStorage.setItem('tvq_contacts', JSON.stringify(contacts));
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Đang gửi...';
+            submitBtn.disabled = true;
             
-            // Log to console for debugging
-            console.log('Contact saved:', data);
-            console.log('All contacts:', contacts);
-            
-            // Show success message
-            const successMsg = document.createElement('div');
-            successMsg.className = 'success-message';
-            successMsg.innerHTML = `
-                <div style="
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: linear-gradient(135deg, #4B4ACB 0%, #4CAF75 100%);
-                    color: white;
-                    padding: 2rem 3rem;
-                    border-radius: 1rem;
-                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-                    z-index: 10000;
-                    text-align: center;
-                ">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
-                    <h3 style="margin-bottom: 0.5rem;">Gửi thành công!</h3>
-                    <p style="opacity: 0.9;">Cảm ơn bạn đã liên hệ. Chúng tôi sẽ phản hồi sớm nhất.</p>
-                </div>
-            `;
-            document.body.appendChild(successMsg);
-            
-            // Remove message after 3 seconds
-            setTimeout(() => {
-                successMsg.remove();
-            }, 3000);
-            
-            // Reset form
-            this.reset();
+            try {
+                // Send to server
+                const response = await fetch('/api/contacts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show success message
+                    showSuccessMessage();
+                    this.reset();
+                } else {
+                    throw new Error(result.message || 'Có lỗi xảy ra');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showErrorMessage(error.message);
+            } finally {
+                // Reset button
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
         });
+    }
+    
+    // Success message
+    function showSuccessMessage() {
+        const successMsg = document.createElement('div');
+        successMsg.className = 'success-message';
+        successMsg.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: linear-gradient(135deg, #4B4ACB 0%, #4CAF75 100%);
+                color: white;
+                padding: 2rem 3rem;
+                border-radius: 1rem;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                z-index: 10000;
+                text-align: center;
+                animation: slideIn 0.3s ease;
+            ">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+                <h3 style="margin-bottom: 0.5rem;">Gửi thành công!</h3>
+                <p style="opacity: 0.9;">Cảm ơn bạn đã liên hệ. Chúng tôi sẽ phản hồi sớm nhất.</p>
+            </div>
+        `;
+        document.body.appendChild(successMsg);
+        
+        setTimeout(() => {
+            successMsg.remove();
+        }, 3000);
+    }
+    
+    // Error message
+    function showErrorMessage(message) {
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'error-message';
+        errorMsg.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                color: white;
+                padding: 2rem 3rem;
+                border-radius: 1rem;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                z-index: 10000;
+                text-align: center;
+                animation: slideIn 0.3s ease;
+            ">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">❌</div>
+                <h3 style="margin-bottom: 0.5rem;">Có lỗi xảy ra</h3>
+                <p style="opacity: 0.9;">${message}</p>
+            </div>
+        `;
+        document.body.appendChild(errorMsg);
+        
+        setTimeout(() => {
+            errorMsg.remove();
+        }, 3000);
     }
 
     // Counter Animation for Stats

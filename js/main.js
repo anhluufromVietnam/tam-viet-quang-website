@@ -80,13 +80,51 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Get form data
             const formData = new FormData(this);
-            const data = Object.fromEntries(formData);
+            const data = {
+                name: formData.get('name'),
+                email: formData.get('email'),
+                company: formData.get('company'),
+                message: formData.get('message'),
+                timestamp: new Date().toISOString()
+            };
             
-            // Simulate form submission
-            console.log('Form submitted:', data);
+            // Save to localStorage
+            let contacts = JSON.parse(localStorage.getItem('tvq_contacts') || '[]');
+            contacts.push(data);
+            localStorage.setItem('tvq_contacts', JSON.stringify(contacts));
+            
+            // Log to console for debugging
+            console.log('Contact saved:', data);
+            console.log('All contacts:', contacts);
             
             // Show success message
-            alert('Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể.');
+            const successMsg = document.createElement('div');
+            successMsg.className = 'success-message';
+            successMsg.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: linear-gradient(135deg, #4B4ACB 0%, #4CAF75 100%);
+                    color: white;
+                    padding: 2rem 3rem;
+                    border-radius: 1rem;
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                    z-index: 10000;
+                    text-align: center;
+                ">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+                    <h3 style="margin-bottom: 0.5rem;">Gửi thành công!</h3>
+                    <p style="opacity: 0.9;">Cảm ơn bạn đã liên hệ. Chúng tôi sẽ phản hồi sớm nhất.</p>
+                </div>
+            `;
+            document.body.appendChild(successMsg);
+            
+            // Remove message after 3 seconds
+            setTimeout(() => {
+                successMsg.remove();
+            }, 3000);
             
             // Reset form
             this.reset();
